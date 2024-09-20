@@ -1,5 +1,3 @@
-# from langchain.memory import ConversationBufferWindowMemory
-import json
 import ai_adapter
 import asyncio
 import os
@@ -22,8 +20,6 @@ user_chain = {}
 user_locks = {}
 # Dictionary to keep track of the tasks for each user
 user_tasks = {}
-# Lock to prevent multiple ingestions from happening at the same time
-ingestion_lock = asyncio.Lock()
 
 
 class RabbitMQ:
@@ -52,27 +48,18 @@ rabbitmq = RabbitMQ(
 
 
 async def query(user_id, message_body):
-    async with ingestion_lock:
+    # trim the VC tag
+    message_body["question"] = clear_tags(message_body["question"])
 
-        # trim the VC tag
-        message_body["question"] = clear_tags(message_body["question"])
+    logger.info(f"Query from user {user_id}: {message_body['question']}")
 
-        logger.info(f"Query from user {user_id}: {message_body['question']}")
+    response = await ai_adapter.invoke(message_body)
 
-        # logger.debug(f"language: {user_data[user_id]['language']}")
+    logger.debug(f"LLM result: {response}")
 
-        response = await ai_adapter.invoke(message_body)
+    logger.info(response)
 
-        logger.debug(f"LLM result: {response}")
-
-        logger.info(response)
-
-        return json.dumps(response)
-
-
-# def reset(user_id):
-#     user_data[user_id]["chat_history"].clear()
-#     return "Reset function executed"
+    return json.dumps(response)
 
 
 async def on_request(message: aio_pika.abc.AbstractIncomingMessage):
@@ -95,24 +82,7 @@ async def process_message(message: aio_pika.abc.AbstractIncomingMessage):
     user_id = body["data"].get("userID")
 
     logger.debug(body)
-
-    operation = body["pattern"]["cmd"]
-
-    # if user_id is None:
-    #     response = "userID not provided"
-    # else:
-    #     if operation == "query":
-    #         if "question" in body["data"]:
-    #             logger.info(
-    #                 f"query time for user id: {user_id}, let's call the query() function!"
-    #             )
     response = await query(user_id, body["data"])
-    #         else:
-    #             response = "Query parameter(s) not provided"
-    #     elif operation == "reset":
-    #         response = reset(user_id)
-    #     else:
-    #         response = "Unknown function"
 
     if rabbitmq.connection and rabbitmq.channel:
         try:
@@ -144,7 +114,7 @@ async def process_message(message: aio_pika.abc.AbstractIncomingMessage):
 
 
 async def main():
-    logger.info(f"main fucntion (re)starting\n")
+    logger.info("main fucntion (re)starting\n")
     # rabbitmq is an instance of the RabbitMQ class defined earlier
     await rabbitmq.connect()
 

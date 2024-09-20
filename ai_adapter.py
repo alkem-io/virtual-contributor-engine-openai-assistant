@@ -57,8 +57,8 @@ async def query_chain(message):
     # process image generation differently
     if isinstance(messages.data[0].content[0], TextContentBlock):
         answer = messages.data[0].content[0].text.value
-        # for citation in messages.data[0].content[0].text.annotations:
-        #     answer = answer.replace(citation.text, "")
+        for citation in messages.data[0].content[0].text.annotations:
+            answer = answer.replace(citation.text, "")
 
     response["answer"] = answer
 
