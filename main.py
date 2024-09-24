@@ -13,14 +13,6 @@ logger = setup_logger(__name__)
 
 logger.info(f"log level {os.path.basename(__file__)}: {LOG_LEVEL}")
 
-# define variables
-user_data = {}
-user_chain = {}
-# dictionary to keep track of the locks for each user
-user_locks = {}
-# Dictionary to keep track of the tasks for each user
-user_tasks = {}
-
 
 class RabbitMQ:
     def __init__(self, host, login, password, queue):
