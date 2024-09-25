@@ -15,7 +15,6 @@ services:
       - .env
     build:
       dockerfile: ./Dockerfile
-    # image: alkemio/guidance-engine:v0.5.1
     platform: linux/x86_64
     # depends_on:
     #   rabbitmq:
