@@ -2,7 +2,7 @@
 name: Bug report
 about: Create a report to help us improve
 title: "BUG: "
-labels: "bug, ai, genai, chatbot, virtual contributor, virtual contributor openai assistant"
+labels: "bug, ai, genai, chatbot, virtual contributor, virtual contributor engine openai assistant"
 assignees: ""
 ---
 
