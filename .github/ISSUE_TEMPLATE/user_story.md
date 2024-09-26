@@ -2,7 +2,7 @@
 name: User Story
 about: A valuable increment of functionality, testable by the users
 title: ""
-labels: "user story, ai, genai, chatbot, virtual contributor, virtual contributor engine expert"
+labels: "user story, ai, genai, chatbot, virtual contributor, virtual contributor engine openai assistant"
 assignees: ""
 ---
 

@@ -2,7 +2,7 @@
 name: Epic
 about: A theme of work that contain sub-tasks required to complete the larger goal / larger user-story
 title: ""
-labels: "epic, ai, genai, chatbot, virtual contributor, virtual contributor engine expert"
+labels: "epic, ai, genai, chatbot, virtual contributor, virtual contributor engine openai assistant"
 assignees: ""
 ---
 

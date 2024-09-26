@@ -2,7 +2,7 @@
 name: Feature request
 about: Suggest an idea for this project
 title: ""
-labels: "enhancement, ai, genai, chatbot, virtual contributor, virtual contributor engine expert"
+labels: "enhancement, ai, genai, chatbot, virtual contributor, virtual contributor engine openai assistant"
 assignees: ""
 ---
 

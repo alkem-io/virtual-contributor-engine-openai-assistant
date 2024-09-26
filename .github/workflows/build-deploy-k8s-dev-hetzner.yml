@@ -20,8 +20,8 @@ jobs:
 
       - name: "Build & Push image"
         run: |
-          docker build -f Dockerfile . -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/alkemio-virtual-contributor-engine-expert:${{ github.sha }} -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/alkemio-virtual-contributor-engine-expert:latest
-          docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/alkemio-virtual-contributor-engine-expert:${{ github.sha }}
+          docker build -f Dockerfile . -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/alkemio-virtual-contributor-engine-openai-assistant:${{ github.sha }} -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/alkemio-virtual-contributor-engine-openai-assistant:latest
+          docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/alkemio-virtual-contributor-engine-openai-assistant:${{ github.sha }}
 
   deploy:
     runs-on: ubuntu-latest
@@ -42,7 +42,7 @@ jobs:
 
       - name: Create Image Pull Secret
         run: |
-          kubectl create secret docker-registry alkemio-virtual-contributor-engine-expert-secret \
+          kubectl create secret docker-registry alkemio-virtual-contributor-engine-openai-assistant-secret \
             --docker-server=${{ secrets.REGISTRY_LOGIN_SERVER }} \
             --docker-username=${{ secrets.REGISTRY_USERNAME }} \
             --docker-password=${{ secrets.REGISTRY_PASSWORD }} \
@@ -51,8 +51,8 @@ jobs:
       - uses: Azure/k8s-deploy@v5.0.0
         with:
           manifests: |
-            manifests/25-virtual-contributor-engine-expert-deployment-dev.yml
+            manifests/25-virtual-contributor-engine-openai-assistant-deployment-dev.yml
           images: |
-            ${{ secrets.REGISTRY_LOGIN_SERVER }}/alkemio-virtual-contributor-engine-expert:${{ github.sha }}
+            ${{ secrets.REGISTRY_LOGIN_SERVER }}/alkemio-virtual-contributor-engine-openai-assistant:${{ github.sha }}
           imagepullsecrets: |
-            alkemio-virtual-contributor-engine-expert-secret
+            alkemio-virtual-contributor-engine-openai-assistant-secret
