@@ -40,6 +40,11 @@ spec:
                 secretKeyRef:
                   name: alkemio-rabbitmq-cluster-default-user
                   key: password
+            - name: LOCAL_PATH
+              valueFrom:
+                configMapKeyRef:
+                  name: alkemio-config
+                  key: AI_LOCAL_PATH
           envFrom:
             - secretRef:
                 name: alkemio-secrets
