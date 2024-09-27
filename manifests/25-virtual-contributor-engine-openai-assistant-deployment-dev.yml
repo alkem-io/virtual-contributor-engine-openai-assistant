@@ -1,0 +1,64 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  namespace: default
+  name: alkemio-virtual-contributor-engine-openai-assistant-deployment
+  labels:
+    app: alkemio-virtual-contributor-engine-openai-assistant
+
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: alkemio-virtual-contributor-engine-openai-assistant
+  template:
+    metadata:
+      labels:
+        app: alkemio-virtual-contributor-engine-openai-assistant
+    spec:
+      containers:
+        - name: alkemio-virtual-contributor-engine-openai-assistant
+          image: alkemio.azurecr.io/alkemio-virtual-contributor-engine-openai-assistant:latest
+          env:
+            - name: RABBITMQ_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: alkemio-rabbitmq-cluster-default-user
+                  key: host
+            - name: RABBITMQ_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: alkemio-rabbitmq-cluster-default-user
+                  key: port
+            - name: RABBITMQ_USER
+              valueFrom:
+                secretKeyRef:
+                  name: alkemio-rabbitmq-cluster-default-user
+                  key: username
+            - name: RABBITMQ_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: alkemio-rabbitmq-cluster-default-user
+                  key: password
+            - name: LOCAL_PATH
+              valueFrom:
+                configMapKeyRef:
+                  name: alkemio-config
+                  key: AI_LOCAL_PATH
+          envFrom:
+            - secretRef:
+                name: alkemio-secrets
+            - configMapRef:
+                name: alkemio-config
+          volumeMounts:
+            - name: dshm
+              mountPath: /dev/shm
+            - name: virtual-contributor-engine-openai-assistant-persistent-storage
+              mountPath: /app/data
+      volumes:
+        - name: dshm
+          emptyDir:
+            medium: Memory
+        - name: virtual-contributor-engine-openai-assistant-persistent-storage
+          persistentVolumeClaim:
+            claimName: virtual-contributor-engine-openai-assistant-pv-claim
