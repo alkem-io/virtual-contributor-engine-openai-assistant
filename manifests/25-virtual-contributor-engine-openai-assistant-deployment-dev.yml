@@ -45,15 +45,3 @@ spec:
                 name: alkemio-secrets
             - configMapRef:
                 name: alkemio-config
-          volumeMounts:
-            - name: dshm
-              mountPath: /dev/shm
-            - name: virtual-contributor-engine-openai-assistant-persistent-storage
-              mountPath: /app/data
-      volumes:
-        - name: dshm
-          emptyDir:
-            medium: Memory
-        - name: virtual-contributor-engine-openai-assistant-persistent-storage
-          persistentVolumeClaim:
-            claimName: virtual-contributor-engine-openai-assistant-pv-claim
