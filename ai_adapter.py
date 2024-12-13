@@ -1,3 +1,4 @@
+from alkemio_virtual_contributor_engine.alkemio_vc_engine import Input, Response
 from openai import OpenAI
 from openai.types.beta.threads import TextContentBlock
 from logger import setup_logger
@@ -6,29 +7,36 @@ from utils import attach_file
 logger = setup_logger(__name__)
 
 
-async def invoke(message):
-    logger.info(message)
+async def invoke(input: Input) -> Response:
+    logger.info(input)
     try:
         # important to await the result before returning
-        return await query_chain(message)
+        return await query_chain(input)
     except Exception as inst:
         logger.exception(inst)
-        return f"{message['displayName']} - the Alkemio's VirtualContributor is currently unavailable."
+        result = f"{input.display_name} - the Alkemio's VirtualContributor is currently unavailable."
+
+        return Response(
+            {
+                "result": result,
+                "original_result": result,
+                "sources": [],
+            }
+        )
 
 
-async def query_chain(message):
+async def query_chain(input: Input) -> Response:
 
-    external_config = message["externalConfig"]
-    question = message["question"]
-    response = message
-    del response["history"]
+    external_config = input.external_config
+    question = input.message
 
     client = OpenAI(api_key=external_config["apiKey"])
 
     files = client.files.list()
 
-    if "externalMetadata" in message and "threadId" in "externalMetadata" in message:
-        thread = client.beta.threads.retrieve(message["externalMetadata"]["threadId"])
+    print(input.external_metadata)
+    if "threadId" in input.external_metadata:
+        thread = client.beta.threads.retrieve(input.external_metadata["threadId"])
     else:
         thread = client.beta.threads.create(
             messages=[
@@ -39,7 +47,6 @@ async def query_chain(message):
                 }
             ]
         )
-        response["threadId"] = thread.id
 
     run = client.beta.threads.runs.create(
         thread_id=thread.id, assistant_id=external_config["assistantId"]
@@ -60,6 +67,13 @@ async def query_chain(message):
         for citation in messages.data[0].content[0].text.annotations:
             answer = answer.replace(citation.text, "")
 
-    response["answer"] = answer
+    response = Response(
+        {
+            "result": answer,
+            "thread_id": thread.id,
+            **input.to_dict(),
+        }
+    )
+    # response.result = answer
 
     return response

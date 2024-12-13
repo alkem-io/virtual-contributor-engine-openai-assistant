@@ -45,6 +45,10 @@ spec:
                 configMapKeyRef:
                   name: alkemio-config
                   key: AI_LOCAL_PATH
+
+            - name: RABBITMQ_QUEUE
+              value: virtual-contributor-engine-openai-assistant
+
           envFrom:
             - secretRef:
                 name: alkemio-secrets
