@@ -1,6 +1,10 @@
 # Use an official Python runtime as a parent image
 ARG PYTHON_VERSION=3.11
-FROM python:${PYTHON_VERSION}-slim-bullseye as builder
+FROM python:${PYTHON_VERSION}-slim-bullseye AS builder
+
+# install git for AlkemioVirtualContributorEngine package
+RUN apt-get update 
+RUN apt-get install git -y
 
 # Set the working directory in the container to /app
 WORKDIR /app

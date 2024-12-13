@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "virtual-contributor-engine-openai-assistant"
-version = "0.1.0"
+version = "0.1.1"
 description = "Alkemio's OpenAI assistant engine"
 authors = ["Alkemio BV <info@alkem.io>"]
 license = "EUPL-1.2"
