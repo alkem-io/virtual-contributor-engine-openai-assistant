@@ -1,7 +1,9 @@
-from alkemio_virtual_contributor_engine.alkemio_vc_engine import Input, Response
+from alkemio_virtual_contributor_engine.setup_logger import setup_logger
+from alkemio_virtual_contributor_engine.events.input import Input
+from alkemio_virtual_contributor_engine.events.response import Response
+
 from openai import OpenAI
 from openai.types.beta.threads import TextContentBlock
-from logger import setup_logger
 from utils import attach_file
 
 logger = setup_logger(__name__)
