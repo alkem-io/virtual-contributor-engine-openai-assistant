@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: alkemio-virtual-contributor-engine-openai-assistant
-          image: alkemio.azurecr.io/alkemio-virtual-contributor-engine-openai-assistant:latest
+          image: rg.nl-ams.scw.cloud/alkemio/alkemio-virtual-contributor-engine-openai-assistant:latest
           env:
             - name: RABBITMQ_HOST
               valueFrom:

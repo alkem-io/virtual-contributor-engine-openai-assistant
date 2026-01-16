@@ -1,4 +1,4 @@
-name: Build, Migrate & Deploy to Test on Hetzner
+name: Build, Migrate & Deploy to Sandbox on Hetzner
 
 on:
   workflow_dispatch:
@@ -23,6 +23,7 @@ jobs:
           docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/alkemio-virtual-contributor-engine-openai-assistant:${{ github.sha }}
 
   deploy:
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - name: "Checkout GitHub Action"

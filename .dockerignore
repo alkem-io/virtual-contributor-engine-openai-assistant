@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtualenvs
+.venv/
+venv/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# VCS
+.git/
+.gitignore
+
+# Editor/OS
+.vscode/
+.DS_Store
+
+# Local env & logs
+.env
+*.log
