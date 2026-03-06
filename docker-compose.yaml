@@ -15,7 +15,6 @@ services:
       - .env
     build:
       dockerfile: ./Dockerfile
-    platform: linux/x86_64
     # depends_on:
     #   rabbitmq:
     #     condition: "service_healthy"
@@ -26,8 +25,6 @@ services:
     image: rabbitmq:3-management-alpine
     extra_hosts:
       - "host.docker.internal:host-gateway"
-
-    platform: linux/x86_64
     container_name: "rabbitmq"
     healthcheck:
       test: rabbitmq-diagnostics check_port_connectivity
