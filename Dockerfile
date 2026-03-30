@@ -1,23 +1,19 @@
 ## Multi-stage build to keep the runtime image small:
-## - Builder uses Debian + Poetry to install deps into /venv
-## - Runtime is distroless (no shell/package manager)
+## - Builder uses Python 3.12 + Poetry to install deps into /venv
+## - Runtime is slim Python 3.12
 
-FROM debian:bookworm-slim AS builder
+FROM python:3.12-slim-bookworm AS builder
 
 ARG POETRY_VERSION=1.8.5
 
 RUN apt-get update \
 	&& apt-get install -y --no-install-recommends \
-		python3 \
-		python3-pip \
-		python3-venv \
 		git \
 		ca-certificates \
 	&& rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Create a venv whose interpreter path matches distroless (/usr/bin/python3.11)
 RUN python3 -m venv /venv
 
 ENV VIRTUAL_ENV=/venv \
@@ -38,9 +34,9 @@ COPY pyproject.toml poetry.lock README.md ./
 RUN poetry install --only main --no-root --no-ansi
 
 # Copy application code
-COPY . /app
+COPY . /app/
 
-FROM gcr.io/distroless/python3-debian12
+FROM python:3.12-slim-bookworm
 
 WORKDIR /app
 
@@ -51,6 +47,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 COPY --from=builder /venv /venv
 COPY --from=builder /app /app
+RUN useradd --create-home --uid 1000 appuser
+USER appuser
 
 ENTRYPOINT ["/venv/bin/python"]
 CMD ["main.py"]
