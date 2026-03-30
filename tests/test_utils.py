@@ -40,11 +40,10 @@ class TestClearTags:
         assert clear_tags(message) == "Plain text without tags"
 
     def test_multiple_tags(self):
-        """Test removal of multiple tags in one string."""
-        # The greedy .* in the regex matches across both tags
+        """Test removal of multiple tags preserves text between them."""
         message = "[a](b) text [c](d)"
         result = clear_tags(message)
-        assert result == ""
+        assert result == "text"
 
 
 class TestAttachFile:

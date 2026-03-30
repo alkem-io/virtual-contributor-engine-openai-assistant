@@ -26,21 +26,21 @@ def mock_input_with_thread(mock_input):
 
 @pytest.fixture
 def mock_openai_client():
-    """Create a fully mocked OpenAI client."""
+    """Create a fully mocked AsyncOpenAI client."""
     client = MagicMock()
 
     # Mock thread
     mock_thread = MagicMock()
     mock_thread.id = "thread-test-123"
-    client.beta.threads.create.return_value = mock_thread
-    client.beta.threads.retrieve.return_value = mock_thread
+    client.beta.threads.create = AsyncMock(return_value=mock_thread)
+    client.beta.threads.retrieve = AsyncMock(return_value=mock_thread)
 
     # Mock run - completed immediately
     mock_run = MagicMock()
     mock_run.status = "completed"
     mock_run.id = "run-test-123"
-    client.beta.threads.runs.create.return_value = mock_run
-    client.beta.threads.runs.retrieve.return_value = mock_run
+    client.beta.threads.runs.create = AsyncMock(return_value=mock_run)
+    client.beta.threads.runs.retrieve = AsyncMock(return_value=mock_run)
 
     # Mock messages with TextContentBlock
     mock_text = MagicMock()
@@ -57,10 +57,12 @@ def mock_openai_client():
 
     mock_messages = MagicMock()
     mock_messages.data = [mock_message]
-    client.beta.threads.messages.list.return_value = mock_messages
+    client.beta.threads.messages.list = AsyncMock(
+        return_value=mock_messages
+    )
 
     # Mock files
-    client.files.list.return_value = []
+    client.files.list = AsyncMock(return_value=[])
 
     return client
 
@@ -102,7 +104,7 @@ class TestQueryChain:
         self, mock_input, mock_openai_client
     ):
         """Test that a new thread is created when no thread_id exists."""
-        with patch("ai_adapter.OpenAI", return_value=mock_openai_client):
+        with patch("ai_adapter.AsyncOpenAI", return_value=mock_openai_client):
             with patch("ai_adapter.isinstance", return_value=True):
                 from ai_adapter import query_chain
                 result = await query_chain(mock_input)
@@ -115,7 +117,7 @@ class TestQueryChain:
         self, mock_input_with_thread, mock_openai_client
     ):
         """Test that an existing thread is retrieved when thread_id exists."""
-        with patch("ai_adapter.OpenAI", return_value=mock_openai_client):
+        with patch("ai_adapter.AsyncOpenAI", return_value=mock_openai_client):
             with patch("ai_adapter.isinstance", return_value=True):
                 from ai_adapter import query_chain
                 await query_chain(mock_input_with_thread)
@@ -134,7 +136,7 @@ class TestQueryChain:
         mock_run.last_error.message = "Something went wrong"
         mock_openai_client.beta.threads.runs.create.return_value = mock_run
 
-        with patch("ai_adapter.OpenAI", return_value=mock_openai_client):
+        with patch("ai_adapter.AsyncOpenAI", return_value=mock_openai_client):
             from ai_adapter import query_chain
             with pytest.raises(RuntimeError, match="OpenAI run failed"):
                 await query_chain(mock_input)
@@ -159,7 +161,7 @@ class TestQueryChain:
         mock_messages.data = [mock_message]
         mock_openai_client.beta.threads.messages.list.return_value = mock_messages
 
-        with patch("ai_adapter.OpenAI", return_value=mock_openai_client):
+        with patch("ai_adapter.AsyncOpenAI", return_value=mock_openai_client):
             with patch("ai_adapter.isinstance", return_value=True):
                 from ai_adapter import query_chain
                 result = await query_chain(mock_input)
@@ -172,7 +174,7 @@ class TestQueryChain:
         self, mock_input, mock_openai_client
     ):
         """Test that run is created with correct thread and assistant IDs."""
-        with patch("ai_adapter.OpenAI", return_value=mock_openai_client):
+        with patch("ai_adapter.AsyncOpenAI", return_value=mock_openai_client):
             with patch("ai_adapter.isinstance", return_value=True):
                 from ai_adapter import query_chain
                 await query_chain(mock_input)
@@ -181,3 +183,41 @@ class TestQueryChain:
                 thread_id="thread-test-123",
                 assistant_id="asst-test-123",
             )
+
+    @pytest.mark.asyncio
+    async def test_incomplete_run_raises_error(
+        self, mock_input, mock_openai_client
+    ):
+        """Test that an incomplete run raises RuntimeError."""
+        mock_run = MagicMock()
+        mock_run.status = "incomplete"
+        mock_run.id = "run-incomplete"
+        mock_run.last_error = None
+        mock_openai_client.beta.threads.runs.create = AsyncMock(
+            return_value=mock_run
+        )
+
+        with patch("ai_adapter.AsyncOpenAI", return_value=mock_openai_client):
+            from ai_adapter import query_chain
+            with pytest.raises(RuntimeError, match="OpenAI run incomplete"):
+                await query_chain(mock_input)
+
+    @pytest.mark.asyncio
+    async def test_requires_action_run_raises_error(
+        self, mock_input, mock_openai_client
+    ):
+        """Test that a requires_action run raises RuntimeError."""
+        mock_run = MagicMock()
+        mock_run.status = "requires_action"
+        mock_run.id = "run-action"
+        mock_run.last_error = None
+        mock_openai_client.beta.threads.runs.create = AsyncMock(
+            return_value=mock_run
+        )
+
+        with patch("ai_adapter.AsyncOpenAI", return_value=mock_openai_client):
+            from ai_adapter import query_chain
+            with pytest.raises(
+                RuntimeError, match="OpenAI run requires_action"
+            ):
+                await query_chain(mock_input)

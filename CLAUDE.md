@@ -5,9 +5,6 @@
 AI-powered OpenAI Assistant engine for the Alkemio platform. Receives questions via RabbitMQ, manages OpenAI Assistant API threads and runs, and returns responses. Leverages OpenAI's managed features including file search, thread persistence, and tool use.
 
 ## Active Technologies
-- Python 3.12+ + openai, aio-pika 9.5.7, alkemio-virtual-contributor-engine v0.8.0 (001-speckit-init)
-- N/A (thread state managed by OpenAI) (001-speckit-init)
-
 - Python 3.12+
 - alkemio-virtual-contributor-engine v0.8.0 (base library)
 - aio-pika 9.5.7 (RabbitMQ async client)

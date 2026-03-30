@@ -4,7 +4,7 @@ from alkemio_virtual_contributor_engine.setup_logger import setup_logger
 from alkemio_virtual_contributor_engine.events.input import Input
 from alkemio_virtual_contributor_engine.events.response import Response
 
-from openai import OpenAI
+from openai import AsyncOpenAI
 from openai.types.beta.threads import TextContentBlock
 from utils import attach_file
 
@@ -35,15 +35,17 @@ async def query_chain(input: Input) -> Response:
     external_config = input.external_config
     question = input.message
 
-    client = OpenAI(api_key=external_config.api_key)
+    client = AsyncOpenAI(api_key=external_config.api_key)
 
-    files = client.files.list()
+    files = await client.files.list()
 
-    print(input.external_metadata)
+    logger.debug(f"External metadata: {input.external_metadata}")
     if input.external_metadata and input.external_metadata.thread_id:
-        thread = client.beta.threads.retrieve(input.external_metadata.thread_id)
+        thread = await client.beta.threads.retrieve(
+            input.external_metadata.thread_id
+        )
     else:
-        thread = client.beta.threads.create(
+        thread = await client.beta.threads.create(
             messages=[
                 {
                     "role": "user",
@@ -53,21 +55,28 @@ async def query_chain(input: Input) -> Response:
             ]
         )
 
-    run = client.beta.threads.runs.create(
+    run = await client.beta.threads.runs.create(
         thread_id=thread.id, assistant_id=external_config.assistant_id
     )
 
-    terminal_states = {"completed", "failed", "cancelled", "expired"}
+    terminal_states = {
+        "completed", "failed", "cancelled", "expired",
+        "incomplete", "requires_action",
+    }
     while run.status not in terminal_states:
         await asyncio.sleep(1)
-        run = client.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
+        run = await client.beta.threads.runs.retrieve(
+            thread_id=thread.id, run_id=run.id
+        )
         logger.info(f"Run status: {run.status}")
 
     if run.status != "completed":
-        error_msg = run.last_error.message if run.last_error else run.status
+        error_msg = (
+            run.last_error.message if run.last_error else run.status
+        )
         raise RuntimeError(f"OpenAI run {run.status}: {error_msg}")
 
-    messages = client.beta.threads.messages.list(thread.id)
+    messages = await client.beta.threads.messages.list(thread.id)
 
     logger.info(type(messages.data[0].content[0]))
 
