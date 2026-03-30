@@ -1,4 +1,6 @@
 import asyncio
+import os
+import time
 
 from alkemio_virtual_contributor_engine.setup_logger import setup_logger
 from alkemio_virtual_contributor_engine.events.input import Input
@@ -44,6 +46,12 @@ async def query_chain(input: Input) -> Response:
         thread = await client.beta.threads.retrieve(
             input.external_metadata.thread_id
         )
+        await client.beta.threads.messages.create(
+            thread_id=thread.id,
+            role="user",
+            content=question,
+            attachments=list(map(attach_file, files)),
+        )
     else:
         thread = await client.beta.threads.create(
             messages=[
@@ -63,7 +71,18 @@ async def query_chain(input: Input) -> Response:
         "completed", "failed", "cancelled", "expired",
         "incomplete", "requires_action",
     }
+    timeout_seconds = int(os.getenv("RUN_POLL_TIMEOUT_SECONDS", "300"))
+    start = time.monotonic()
     while run.status not in terminal_states:
+        elapsed = time.monotonic() - start
+        if elapsed > timeout_seconds:
+            logger.error(
+                f"Run {run.id} timed out after {elapsed:.0f}s "
+                f"(status: {run.status})"
+            )
+            raise TimeoutError(
+                f"OpenAI run polling timed out after {timeout_seconds}s"
+            )
         await asyncio.sleep(1)
         run = await client.beta.threads.runs.retrieve(
             thread_id=thread.id, run_id=run.id

@@ -117,6 +117,8 @@ class TestQueryChain:
         self, mock_input_with_thread, mock_openai_client
     ):
         """Test that an existing thread is retrieved when thread_id exists."""
+        mock_openai_client.beta.threads.messages.create = AsyncMock()
+
         with patch("ai_adapter.AsyncOpenAI", return_value=mock_openai_client):
             with patch("ai_adapter.isinstance", return_value=True):
                 from ai_adapter import query_chain
@@ -125,6 +127,28 @@ class TestQueryChain:
             mock_openai_client.beta.threads.retrieve.assert_called_once_with(
                 "thread-existing-123"
             )
+
+    @pytest.mark.asyncio
+    async def test_adds_message_to_existing_thread(
+        self, mock_input_with_thread, mock_openai_client
+    ):
+        """Test that the user message is added to an existing thread."""
+        mock_openai_client.beta.threads.messages.create = AsyncMock()
+
+        with patch("ai_adapter.AsyncOpenAI", return_value=mock_openai_client):
+            with patch("ai_adapter.isinstance", return_value=True):
+                from ai_adapter import query_chain
+                await query_chain(mock_input_with_thread)
+
+            mock_openai_client.beta.threads.messages.create \
+                .assert_called_once()
+            call_kwargs = (
+                mock_openai_client.beta.threads.messages.create
+                .call_args
+            )
+            assert call_kwargs.kwargs["thread_id"] == "thread-test-123"
+            assert call_kwargs.kwargs["role"] == "user"
+            assert call_kwargs.kwargs["content"] == "What is Alkemio?"
 
     @pytest.mark.asyncio
     async def test_run_failure_raises_error(self, mock_input, mock_openai_client):
@@ -219,5 +243,29 @@ class TestQueryChain:
             from ai_adapter import query_chain
             with pytest.raises(
                 RuntimeError, match="OpenAI run requires_action"
+            ):
+                await query_chain(mock_input)
+
+    @pytest.mark.asyncio
+    async def test_polling_timeout_raises_error(
+        self, mock_input, mock_openai_client, monkeypatch
+    ):
+        """Test that polling raises TimeoutError after deadline."""
+        monkeypatch.setenv("RUN_POLL_TIMEOUT_SECONDS", "0")
+
+        mock_run = MagicMock()
+        mock_run.status = "in_progress"
+        mock_run.id = "run-stuck"
+        mock_openai_client.beta.threads.runs.create = AsyncMock(
+            return_value=mock_run
+        )
+        mock_openai_client.beta.threads.runs.retrieve = AsyncMock(
+            return_value=mock_run
+        )
+
+        with patch("ai_adapter.AsyncOpenAI", return_value=mock_openai_client):
+            from ai_adapter import query_chain
+            with pytest.raises(
+                TimeoutError, match="timed out"
             ):
                 await query_chain(mock_input)
