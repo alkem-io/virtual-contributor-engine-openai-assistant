@@ -1,3 +1,5 @@
+import asyncio
+
 from alkemio_virtual_contributor_engine.setup_logger import setup_logger
 from alkemio_virtual_contributor_engine.events.input import Input
 from alkemio_virtual_contributor_engine.events.response import Response
@@ -16,14 +18,15 @@ async def invoke(input: Input) -> Response:
         return await query_chain(input)
     except Exception as inst:
         logger.exception(inst)
-        result = f"{input.display_name} - the Alkemio's VirtualContributor is currently unavailable."
+        result = (
+            f"{input.display_name}"
+            " - the Alkemio's VirtualContributor is currently unavailable."
+        )
 
         return Response(
-            {
-                "result": result,
-                "original_result": result,
-                "sources": [],
-            }
+            result=result,
+            original_result=result,
+            sources=[],
         )
 
 
@@ -32,13 +35,13 @@ async def query_chain(input: Input) -> Response:
     external_config = input.external_config
     question = input.message
 
-    client = OpenAI(api_key=external_config["apiKey"])
+    client = OpenAI(api_key=external_config.api_key)
 
     files = client.files.list()
 
     print(input.external_metadata)
-    if "threadId" in input.external_metadata:
-        thread = client.beta.threads.retrieve(input.external_metadata["threadId"])
+    if input.external_metadata and input.external_metadata.thread_id:
+        thread = client.beta.threads.retrieve(input.external_metadata.thread_id)
     else:
         thread = client.beta.threads.create(
             messages=[
@@ -51,11 +54,18 @@ async def query_chain(input: Input) -> Response:
         )
 
     run = client.beta.threads.runs.create(
-        thread_id=thread.id, assistant_id=external_config["assistantId"]
+        thread_id=thread.id, assistant_id=external_config.assistant_id
     )
 
-    while run.status != "completed":
+    terminal_states = {"completed", "failed", "cancelled", "expired"}
+    while run.status not in terminal_states:
+        await asyncio.sleep(1)
         run = client.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
+        logger.info(f"Run status: {run.status}")
+
+    if run.status != "completed":
+        error_msg = run.last_error.message if run.last_error else run.status
+        raise RuntimeError(f"OpenAI run {run.status}: {error_msg}")
 
     messages = client.beta.threads.messages.list(thread.id)
 
@@ -70,12 +80,8 @@ async def query_chain(input: Input) -> Response:
             answer = answer.replace(citation.text, "")
 
     response = Response(
-        {
-            "result": answer,
-            "thread_id": thread.id,
-            **input.to_dict(),
-        }
+        result=answer,
+        thread_id=thread.id,
     )
-    # response.result = answer
 
     return response
