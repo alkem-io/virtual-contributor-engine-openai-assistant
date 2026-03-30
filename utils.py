@@ -8,7 +8,7 @@ logger = setup_logger(__name__)
 
 
 def clear_tags(message):
-    return re.sub(r"(-? ?\[@?.*\]\(.*?\))|}|{", "", message).strip()
+    return re.sub(r"(-? ?\[@?.*?\]\(.*?\))|}|{", "", message).strip()
 
 
 def attach_file(file: FileObject) -> MessageAttachment:

@@ -2,18 +2,17 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-
-import asyncio
-import os
-from alkemio_virtual_contributor_engine.alkemio_vc_engine import (
+import asyncio  # noqa: E402
+import os  # noqa: E402
+from alkemio_virtual_contributor_engine.alkemio_vc_engine import (  # noqa: E402
     AlkemioVirtualContributorEngine,
 )
-from alkemio_virtual_contributor_engine.events.input import Input
-from alkemio_virtual_contributor_engine.events.response import Response
-from alkemio_virtual_contributor_engine.setup_logger import setup_logger
+from alkemio_virtual_contributor_engine.events.input import Input  # noqa: E402
+from alkemio_virtual_contributor_engine.events.response import Response  # noqa: E402
+from alkemio_virtual_contributor_engine.setup_logger import setup_logger  # noqa: E402
 
-from config import env
-import ai_adapter
+from config import env  # noqa: E402
+import ai_adapter  # noqa: E402
 
 logger = setup_logger(__name__)
 
@@ -21,12 +20,12 @@ logger.info(f"log level {os.path.basename(__file__)}: {env.log_level}")
 
 
 async def on_request(input: Input) -> Response:
-    logger.info(f"Expert engine invoked; Input is {input.to_dict()}")
+    logger.info(f"OpenAI Assistant engine invoked; Input is {input.model_dump()}")
     logger.info(
-        f"AiPersonaServiceID={input.persona_service_id} with VC name `{input.display_name}` invoked."
+        f"AiPersonaID={input.persona_id} with VC name `{input.display_name}` invoked."
     )
     result = await ai_adapter.invoke(input)
-    logger.info(f"LLM result: {result.to_dict()}")
+    logger.info(f"LLM result: {result.model_dump()}")
     return result
 
 
